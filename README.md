@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HSDArena Frontend
 
-## Getting Started
+**HSDArena Frontend**, Next.js ve Tailwind CSS kullanılarak geliştirilmiş, **backend API ile entegre çalışabilen** bir web uygulamasıdır.  
 
-First, run the development server:
+Şu an frontend, **ReqRes demo backend** ile test edilmekte olup, gerçek backend geldiğinde sadece `.env.local` güncellenerek sorunsuz geçiş sağlanabilir.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🚀 Özellikler
+
+- Modern **Next.js (App Router)** mimarisi  
+- **Tailwind CSS** ile responsive tasarım  
+- **JWT token yönetimi** ve otomatik Authorization header ekleme  
+- Login ve logout işlevselliği (`useAuth` hook’u ile)  
+- Dashboard sayfasında kullanıcı bilgilerini görüntüleme  
+- Backend URL ve API key’i `.env.local` üzerinden kolayca değiştirilebilir  
+- ReqRes demo API ile test edilebilir; gerçek backend ile sorunsuz geçiş  
+
+---
+
+## 🔑 ReqRes Demo Kullanıcı
+
+- Email: `eve.holt@reqres.in`  
+- Password: `cityslicka`  
+
+> Not: Bu kullanıcı sadece ReqRes demo backend ile test amaçlıdır. Gerçek backend geldiğinde kendi kullanıcılarınızla çalışabilirsiniz.
+
+---
+
+## ⚙️ Kurulum
+
+1. Repo’yu klonlayın:
+
+```
+git clone https://github.com/EmirUzlucan/hsdarena-frontend.git
+
+cd hsdarena-frontend
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Bağımlılıkları yükleyin:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. `.env.local` dosyasını oluşturun:
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+```
+NEXT_PUBLIC_API_URL=https://reqres.in/api
+NEXT_PUBLIC_API_KEY=reqres-free-v1
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Backend geldiğinde sadece URL ve gerekiyorsa API key değiştirin:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+NEXT_PUBLIC_API_URL=https://api.sizin-backend.com
+NEXT_PUBLIC_API_KEY=backend-key-123
+```
 
-## Deploy on Vercel
+4. Geliştirme sunucusunu başlatın:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+- Uygulama varsayılan olarak: [http://localhost:3000](http://localhost:3000)  
+
+---
+
+## 🔗 Kullanım
+
+### Login
+
+```
+const { login } = useAuth();
+await login(email, password);
+```
+
+- Token otomatik olarak `localStorage`’a kaydedilir ve tüm API isteklerinde Authorization header olarak gönderilir.
+
+### Logout
+
+```
+const { logout } = useAuth();
+logout(); // Token silinir, kullanıcı state sıfırlanır
+```
+
+### API Çağrısı
+
+```
+import { apiFetch } from "@/lib/api";
+const data = await apiFetch("/users/2"); // Örnek endpoint
+```
+
+- `apiFetch` otomatik olarak base URL, API key ve token header ekler.  
+- Yeni endpoint eklemek için sadece path ve method/body belirtmek yeterlidir.
+
+---
+
+## 🛠️ Dosya Yapısı
+
+```
+hsdarena-frontend/
+│
+├─ src/
+│ ├─ app/ # Next.js sayfaları (page.tsx, dashboard, login vs.)
+│ ├─ components/ # UI komponentleri (butonlar, formlar, layout)
+│ ├─ hooks/ # useAuth hook ve diğer hooklar
+│ ├─ lib/ # apiFetch helper
+│ ├─ types/ # TypeScript tip tanımlamaları
+│
+├─ .env.local # API URL ve key (push etmeyin!)
+├─ package.json
+├─ next.config.js
+└─ ...
+```
+---
+
+## 📌 Notlar
+
+- `.env.local` **asla commit edilmemeli**; API key ve token içerir.  
+- ReqRes demo backend sadece **tek bir login kullanıcısı** ile çalışır (email: `eve.holt@reqres.in`, password: `cityslicka`).  
+- Gerçek backend geldiğinde `.env.local` güncellemek yeterlidir; frontend koduna dokunmaya gerek yok.  
+
