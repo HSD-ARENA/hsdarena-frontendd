@@ -116,6 +116,72 @@ hsdarena-frontend/
 ├─ next.config.js
 └─ ...
 ```
+
+## 🌿 Git Branch ve Commit Kullanımı
+
+Projede **ana dal (main)** her zaman deploy edilebilir ve stabil tutulmalıdır. Yeni özellikler veya düzeltmeler için **branch** oluşturup üzerinde çalışmak önerilir.  
+
+### 1️⃣ Branch Oluşturma
+
+Yeni bir özellik veya düzeltme için:
+
+```
+git checkout -b feature/yeni-ozellik
+```
+
+- `feature/yeni-ozellik` → branch ismi, anlamlı ve kısa olmalı  
+- `checkout -b` → yeni branch oluşturur ve o branch’e geçer  
+
+---
+
+### 2️⃣ Çalışma ve Commit
+
+Değişiklik yaptıktan sonra:
+
+- `git add .` → tüm değişiklikleri stage’ler  
+- `git commit -m "mesaj"` → commit mesajı ile değişiklikleri kaydeder  
+- Commit mesajı **kısa, anlaşılır ve yapılan değişikliği özetler**  
+
+---
+
+### 3️⃣ Branch’i Remote’a Gönderme
+
+```
+git push -u origin feature/yeni-ozellik
+```
+
+
+- Yeni branch GitHub’a eklenir ve başkalarıyla paylaşılabilir  
+- `-u` parametresi branch’i remote ile takip edecek şekilde ayarlar  
+
+---
+
+### 4️⃣ Pull Request / Merge
+
+- GitHub’da yeni branch için **Pull Request (PR)** açılır  
+- Kod gözden geçirilir, onaylanırsa `main` branch’ine merge edilir  
+- Bu yöntem, ana branch’in her zaman stabil kalmasını sağlar  
+
+---
+
+### 5️⃣ Ana Branch’e Geçme
+
+```
+git checkout main
+git pull origin main
+```
+
+- Ana branch’e geçip en güncel hâlini alabilirsin  
+- Yeni feature branch’ini main’e merge etmeden önce mutlaka güncel olmalı  
+
+---
+
+### 💡 Öneriler
+
+- Her yeni özellik için **yeni branch** oluştur  
+- Commit mesajlarını **anlaşılır ve kısa** tut  
+- Ana branch’e **doğrudan commit yapma**; sadece PR üzerinden merge et  
+
 ---
 
 ## 📌 Notlar
