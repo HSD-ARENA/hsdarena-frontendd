@@ -34,19 +34,19 @@ export default function TeamJoinPage() {
     };
 
     return (
-        <div className="h-full w-full flex flex-col items-center justify-between">
+        <div className="h-full w-full flex flex-col items-center justify-start">
             <h2 className="text-white text-2xl font-semibold text-center mt-12">Takım Katılımı</h2>
             <form onSubmit={handleJoin} className="p-6 w-100">
                 <Label htmlFor="teamName">Takım Adı</Label>
-                <Input id="teamName" placeholder="Takım Adı" value={teamName} onChange={e => setTeamName(e.target.value)} />
+                <Input id="teamName" placeholder="Takım Adı" value={teamName} onChange={e => setTeamName(e.target.value)} className="w-full" />
                 <Label htmlFor="sessionCode">Session Kod</Label>
-                <Input id="sessionCode" placeholder="Session Kod" value={sessionCode} onChange={e => setSessionCode(e.target.value)} className="mt-2" />
+                <Input id="sessionCode" placeholder="Session Kod" value={sessionCode} onChange={e => setSessionCode(e.target.value)} className="w-full" />
                 {error && <p className="text-red-500 mt-2">{error}</p>}
                 <div className="w-full flex justify-center">
                     <Button type="submit" variant="danger" className="mt-4">Katıl</Button>
                 </div>
             </form>
-            <div className="w-full flex justify-start p-6">
+            <div className="fixed bottom-0 left-0 m-6">
                 <Link href="/">
                     <Button type="button" variant="danger" className="mt-4">Ana Sayfa</Button>
                 </Link>

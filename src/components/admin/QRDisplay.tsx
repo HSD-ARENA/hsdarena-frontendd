@@ -1,13 +1,22 @@
 "use client";
 
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
+import QRCode from "react-qr-code";
+import Input from "../ui/Input";
+import Button from "../ui/Button";
 
 interface QRDisplayProps {
     sessionCode: string;
 }
 
 const QRDisplay: FC<QRDisplayProps> = ({ sessionCode }) => {
-    const url = `${window.location.origin}/team/join?session=${sessionCode}`;
+    const [url, setUrl] = useState("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            setUrl(`${window.location.origin}/team/join?sessionCode=${sessionCode}`);
+        }
+    }, [sessionCode]);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(url);
@@ -15,26 +24,19 @@ const QRDisplay: FC<QRDisplayProps> = ({ sessionCode }) => {
     };
 
     return (
-        <div className="bg-gray-50 p-4 rounded shadow space-y-2">
+        <div className="flex flex-col space-y-4 p-6 rounded shadow h-full">
             <h3 className="font-semibold">QR Kod & Katılım URL</h3>
-            <div className="flex items-center gap-4">
-                {/* Placeholder QR – daha sonra react-qr-code veya benzeri paket ile gerçek QR */}
-                <div className="bg-white border p-4 w-24 h-24 flex items-center justify-center">
-                    QR
+            <div className="flex flex-col space-y-4 items-center h-full">
+                {/* Gerçek QR kod */}
+                <div className="bg-white p-4 rounded-md h-full">
+                    {url && <QRCode value={url} className="w-full h-full" />}
                 </div>
-                <div className="flex-1 flex flex-col gap-2">
-                    <input
-                        type="text"
-                        readOnly
-                        value={url}
-                        className="border p-2 rounded w-full"
-                    />
-                    <button
-                        onClick={handleCopy}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    >
+
+                <div className="flex-1 flex flex-col w-full">
+                    <Input type="text" readOnly value={url} className="w-full" />
+                    <Button onClick={handleCopy} variant="danger">
                         Kopyala
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
