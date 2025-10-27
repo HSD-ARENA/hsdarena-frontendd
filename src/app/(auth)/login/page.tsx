@@ -7,6 +7,8 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Label from "@/components/ui/Label";
 import OverlaySpinner from "@/components/ui/OverlaySpinner";
+import Link from "next/link";
+
 
 export default function LoginPage() {
     const router = useRouter();
@@ -31,17 +33,24 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center h-screen">
+        <div className="h-full w-full flex flex-col items-center justify-between">
             {loading && <OverlaySpinner />}
-            <form onSubmit={handleSubmit} className="p-6 bg-white shadow-md rounded-lg w-80">
-                <h2 className="text-2xl font-semibold mb-4 text-center">Admin Girişi</h2>
+            <h2 className="text-white text-2xl font-semibold text-center mt-12">Admin Girişi</h2>
+            <form onSubmit={handleSubmit} className="p-6 w-100">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
                 <Label htmlFor="password">Şifre</Label>
                 <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Şifre" />
                 {error && <p className="text-red-500 mt-2">{error}</p>}
-                <Button type="submit" className="w-full mt-4">Giriş Yap</Button>
+                <div className="w-full flex justify-center">
+                    <Button type="submit" variant="danger" className="mt-4">Giriş Yap</Button>
+                </div>
             </form>
+            <div className="w-full flex justify-start p-6">
+                <Link href="/">
+                    <Button type="button" variant="danger" className="mt-4">Ana Sayfa</Button>
+                </Link>
+            </div>
         </div>
     );
 }

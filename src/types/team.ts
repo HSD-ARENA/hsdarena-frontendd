@@ -6,4 +6,5 @@ export interface JoinTeamRequest {
 export interface JoinTeamResponse {
     teamId: string;
     message: string;
+    success: boolean;
 }

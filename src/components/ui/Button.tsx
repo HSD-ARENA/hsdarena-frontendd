@@ -8,7 +8,7 @@ export default function Button({ children, variant = "primary", className = "", 
     const variantClass = {
         primary: "bg-blue-600 text-white hover:bg-blue-700",
         secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
-        danger: "bg-red-600 text-white hover:bg-red-700",
+        danger: "bg-[#BB0000] text-white hover:bg-red-700",
         button1: "bg-[#63AEA8] text-white hover:bg-[#4DAE9A]",
         button2: "bg-[#E06085] text-white hover:bg-[#D05075]",
         button3: "bg-[#C57CEA] text-white hover:bg-[#B06CD5]",
