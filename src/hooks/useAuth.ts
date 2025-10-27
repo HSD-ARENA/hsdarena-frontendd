@@ -1,48 +1,61 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { login as loginService } from "@/services/auth";
+import { LoginRequest } from "@/types/auth";
 
 export function useAuth() {
+    const router = useRouter();
     const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
+    const login = async (data: LoginRequest) => {
+        setLoading(true);
+        try {
+            const res = await loginService(data);
+            console.log('Raw login response:', res); // Debug için
+
+            // API yanıtında token olmadığı için geçici bir token oluşturuyoruz
+            const token = btoa(JSON.stringify({
+                email: data.email,
+                timestamp: new Date().getTime()
+            }));
+
+            localStorage.setItem("token", token);
+            console.log('Token saved:', token); // Debug için
+
+            setUser({
+                email: data.email
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error('Login error:', error);
+            localStorage.removeItem("token");
+            setUser(null);
+            throw error;
+        } finally {
             setLoading(false);
-            return;
         }
-
-        // Varsayılan olarak ReqRes demo kullanıcı: /users/1
-        apiFetch("/users/1")
-            .then((data) => setUser(data.data ?? data))
-            .catch(() => localStorage.removeItem("token"))
-            .finally(() => setLoading(false));
-    }, []);
-
-    const login = async (email: string, password: string) => {
-        const res = await apiFetch("/login", {
-            method: "POST",
-            body: JSON.stringify({ email, password }),
-        });
-
-        const token = res.token;
-        if (!token) throw new Error("Login failed");
-
-        localStorage.setItem("token", token);
-
-        // Login sonrası kullanıcıyı al
-        const userRes = await apiFetch("/users/1");
-        setUser(userRes.data ?? userRes);
-
-        return res;
     };
 
     const logout = () => {
         localStorage.removeItem("token");
+        router.replace("/login");
         setUser(null);
     };
+
+    // Check authentication status on mount
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            try {
+                const decoded = JSON.parse(atob(token));
+                setUser({ email: decoded.email });
+            } catch (e) {
+                localStorage.removeItem("token");
+            }
+        }
+    }, []);
 
     return { user, login, logout, loading };
 }
