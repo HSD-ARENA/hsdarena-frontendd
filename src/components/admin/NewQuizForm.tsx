@@ -5,35 +5,20 @@ import { useRouter } from "next/navigation";
 import { useQuiz } from "@/hooks/useQuiz";
 import Input from "../ui/Input";
 import RadioButton from "../ui/RadioButton";
-import Link from "next/link";
 import OverlaySpinner from "../ui/OverlaySpinner";
 import Button from "../ui/Button";
+import { QuizQuestion } from "@/types/quiz";
 
 const YeniQuizForm = () => {
     const [options, setOptions] = useState(["", "", "", ""]);
     const [correctIndex, setCorrectIndex] = useState(null as number | null);
     const [questionText, setQuestionText] = useState("");
     const [title, setTitle] = useState("");
-    const { create, loading } = useQuiz();
+    const { create, fectSession, loading } = useQuiz();
     const router = useRouter();
-    type Question = {
-        question: string;
-        options: string[];
-        correctAnswer: number | null;
-    };
-    const [questions, setQuestions] = useState<Question[]>([]);
-    var mYJson: Question[] = [
-        {
-            question: "baskent",
-            options: ["Ankara", "Istanbul", "Izmir", "Bursa"],
-            correctAnswer: 0
-        },
-        {
-            question: "Başka bir soru",
-            options: ["Cevap 1", "Cevap 2", "Cevap 3", "Cevap 4"],
-            correctAnswer: 1
-        }
-    ]
+
+    const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         if (title.trim() === "") {
@@ -47,9 +32,15 @@ const YeniQuizForm = () => {
             try {
                 const res = await create({
                     title,
-                    questions: [], // MVP için boş, sorular sonraki adımda eklenebilir
+                    settings: {
+                        shuffleQuestions: true,
+                        showCorrectAnswers: false,
+                        allowRetake: true
+                    },
+                    questions, // MVP için boş, sorular sonraki adımda eklenebilir
                 });
-                router.replace(`/admin/quiz/session/${res.quizId}`);
+                const response = await fectSession(res.id);
+                router.replace(`/admin/quiz/join/${response?.sessionCode}`);
             } catch (err: any) {
                 alert(err.message);
             }
@@ -76,9 +67,13 @@ const YeniQuizForm = () => {
         } else {
             e.preventDefault();
             const payload = {
-                question: questionText,
-                options,
-                correctAnswer: correctIndex,
+                index: questions.length,
+                text: questionText,
+                type: "MCQ",
+                choices: options.map((opt, i) => ({ id: "choice_" + (i + 1).toString(), text: opt })),
+                correctAnswer: "choice_" + (correctIndex + 1).toString(),
+                timeLimitSec: 30,
+                points: 10
             };
             console.log("Saving question:", payload);
             setQuestions([...questions, payload]);
@@ -92,9 +87,10 @@ const YeniQuizForm = () => {
         }
     };
 
-    const handleDeleteQuestion = (questionToDelete: string) => {
-        const updatedQuestions = questions.filter(q => q.question !== questionToDelete);
-        setQuestions(updatedQuestions);
+    const handleDeleteQuestion = (questionToDelete: number) => {
+        const updatedQuestions = questions.filter(q => q.index !== questionToDelete);
+        const reindexedQuestions = updatedQuestions.map((q, i) => ({ ...q, index: i }));
+        setQuestions(reindexedQuestions);
     }
 
     return (
@@ -142,19 +138,19 @@ const YeniQuizForm = () => {
             <div className="p-6 w-75 space-y-4">
                 {questions.map((quiz) => (
                     <div
-                        key={quiz.question}
+                        key={quiz.index}
                         className="flex justify-between items-center bg-white rounded-lg p-4 shadow"
                     >
                         <div>
-                            <h2 className="text-lg font-semibold">{quiz.question}</h2>
-                            <p className="text-sm text-gray-500">{quiz.options.join(", ")} </p>
+                            <h2 className="text-lg font-semibold">{quiz.text}</h2>
+                            <p className="text-sm text-gray-500">{quiz.choices.map(c => c.text).join(", ")} </p>
                             {quiz.correctAnswer !== null && (
-                                <p className="text-sm text-[#BB0000]">Doğru Cevap: {quiz.options[quiz.correctAnswer]}</p>
+                                <p className="text-sm text-[#BB0000]">Doğru Cevap: {quiz.choices.find(c => c.id === quiz.correctAnswer)?.text}</p>
                             )}
                         </div>
                         <Button
                             type="button"
-                            onClick={() => handleDeleteQuestion(quiz.question)}
+                            onClick={() => handleDeleteQuestion(quiz.index)}
                             variant="danger"
                         >
                             Sil

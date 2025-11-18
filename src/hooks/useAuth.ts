@@ -1,36 +1,47 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { login as loginService } from "@/services/auth";
-import { LoginRequest } from "@/types/auth";
+import { LoginRequest, LoginResponse } from "@/types/auth";
+
 
 export function useAuth() {
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<object | null>(null);
     const [loading, setLoading] = useState(false);
 
-    const login = async (data: LoginRequest) => {
+    // Check authentication status on mount
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            // If there's stored user data, retrieve it
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                setUser(JSON.parse(storedUser));
+            }
+        }
+    }, []);
+
+    const login = async (data: LoginRequest): Promise<LoginResponse> => {
         setLoading(true);
         try {
             const res = await loginService(data);
-            console.log('Raw login response:', res); // Debug için
+            const token = res.access_token;
 
-            // API yanıtında token olmadığı için geçici bir token oluşturuyoruz
-            const token = btoa(JSON.stringify({
-                email: data.email,
-                timestamp: new Date().getTime()
-            }));
+            console.log('Raw login response:', res.user);
+            setUser(res.user);
 
+            // Store both token and user data. The app's API client (`apiFetch`) reads
+            // the token from localStorage and will add the Authorization header.
             localStorage.setItem("token", token);
-            console.log('Token saved:', token); // Debug için
+            localStorage.setItem("user", JSON.stringify(res.user));
+            console.log('Token saved:', token);
 
-            setUser({
-                email: data.email
-            });
-
-            return { success: true };
+            return res;
         } catch (error) {
             console.error('Login error:', error);
             localStorage.removeItem("token");
+
+            localStorage.removeItem("user");
             setUser(null);
             throw error;
         } finally {
@@ -40,22 +51,14 @@ export function useAuth() {
 
     const logout = () => {
         localStorage.removeItem("token");
-        router.replace("/login");
+        localStorage.removeItem("user");
         setUser(null);
+        router.replace("/login");
     };
 
-    // Check authentication status on mount
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            try {
-                const decoded = JSON.parse(atob(token));
-                setUser({ email: decoded.email });
-            } catch (e) {
-                localStorage.removeItem("token");
-            }
-        }
-    }, []);
+        console.log('User state updated:', user);
+    }, [user]);
 
     return { user, login, logout, loading };
 }

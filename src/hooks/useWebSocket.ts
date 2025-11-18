@@ -1,18 +1,45 @@
-import { useEffect, useRef } from "react";
-import { RealtimeMessage } from "@/types/realtime";
+"use client";
 
-export function useWebSocket(url: string, onMessage: (msg: RealtimeMessage) => void) {
-    const wsRef = useRef<WebSocket | null>(null);
+import { useEffect, useState } from 'react';
+import { Socket } from 'socket.io-client';
+import { wsService } from '../services/webSocket.service';
+
+export const useWebSocket = (token: string) => {
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [quizData, setQuizData] = useState(null);
+    const [currentQuestion, setCurrentQuestion] = useState(null);
 
     useEffect(() => {
-        wsRef.current = new WebSocket(url);
-        wsRef.current.onmessage = (event) => {
-            const data: RealtimeMessage = JSON.parse(event.data);
-            onMessage(data);
+        const socket = wsService.connect(token);
+
+        socket.on('connect', () => {
+            setIsConnected(true);
+        });
+
+        socket.on('disconnect', () => {
+            setIsConnected(false);
+        });
+
+        socket.on('quizStarted', (data) => {
+            setQuizData(data);
+        });
+
+        socket.on('questionReceived', (question) => {
+            setCurrentQuestion(question);
+        });
+
+        setSocket(socket);
+
+        return () => {
+            wsService.disconnect();
         };
+    }, [token]);
 
-        return () => wsRef.current?.close();
-    }, [url]);
-
-    return wsRef.current;
-}
+    return {
+        socket,
+        isConnected,
+        quizData,
+        currentQuestion
+    };
+};

@@ -23,7 +23,7 @@ export default function LoginPage() {
 
         try {
             const result = await login({ email, password });
-            if (result.success) {
+            if (result.access_token && result.access_token === localStorage.getItem("token")) {
                 router.replace("/admin");
             }
         } catch (err: any) {

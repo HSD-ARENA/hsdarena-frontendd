@@ -9,11 +9,9 @@ export function useTeam() {
         setLoading(true);
         try {
             const response = await joinTeam(data);
-            return {
-                success: true,
-                teamId: response.teamId,
-                message: response.message
-            };
+            const teamToken = response.teamToken;
+            localStorage.setItem("teamToken", teamToken);
+            return response;
         } catch (error) {
             console.error('Login error:', error);
             throw error;

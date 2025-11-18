@@ -1,6 +1,6 @@
 export interface AnswerRequest {
     teamId: string;
-    quizId: string;
+    sessionId: string;
     questionId: string;
     answer: string;
 }

@@ -20,6 +20,7 @@ export default function DashboardPage() {
     }, [router]);
 
     if (loading) return <OverlaySpinner />;
+    console.log('Authenticated user:', user); // Debug için
     if (!user) return null;
 
     return (

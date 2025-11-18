@@ -1,22 +1,36 @@
-
 export const API_URL = process.env.NEXT_PUBLIC_API_URL;
-export const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (typeof window === "undefined") {
+        throw new Error("apiFetch sadece tarayıcı tarafında kullanılabilir.");
+    }
 
-    const baseHeaders: Record<string, string> = {
+    const token = localStorage.getItem("token");
+
+    let extraHeaders: Record<string, string> = {};
+    if (options.headers) {
+        if (options.headers instanceof Headers) {
+            options.headers.forEach((value, key) => {
+                extraHeaders[key] = value;
+            });
+        } else if (Array.isArray(options.headers)) {
+            options.headers.forEach(([key, value]) => {
+                extraHeaders[key] = value;
+            });
+        } else {
+            extraHeaders = { ...options.headers } as Record<string, string>;
+        }
+    }
+
+    const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...(API_KEY ? { "x-api-key": API_KEY } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...extraHeaders,
     };
 
     const res = await fetch(`${API_URL}${endpoint}`, {
         ...options,
-        headers: {
-            ...baseHeaders,
-            ...(options.headers || {}),
-        },
+        headers,
     });
 
     if (!res.ok) {

@@ -23,9 +23,8 @@ export default function TeamJoinPage() {
         e.preventDefault();
         try {
             const result = await join({ teamName, sessionCode });
-            console.log(result.success)
-            if (result.success) {
-                router.replace(`/team/quiz/${result.teamId}`);
+            if (result.teamToken && result.teamToken === localStorage.getItem("teamToken")) {
+                router.replace(`/team/quiz/${result.sessionCode}`);
             }
         } catch (err: any) {
             console.error('Login error:', err);

@@ -4,5 +4,10 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-    token: string;
+    access_token: string;
+    user: {
+        id: string;
+        email: string;
+        role: string;
+    }
 }
