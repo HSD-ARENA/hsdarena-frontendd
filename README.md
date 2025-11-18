@@ -1,30 +1,5 @@
 # HSDArena Frontend
 
-**HSDArena Frontend**, Next.js ve Tailwind CSS kullanılarak geliştirilmiş, **backend API ile entegre çalışabilen** bir web uygulamasıdır.  
-
-Şu an frontend, **ReqRes demo backend** ile test edilmekte olup, gerçek backend geldiğinde sadece `.env.local` güncellenerek sorunsuz geçiş sağlanabilir.
-
----
-
-## 🚀 Özellikler
-
-- Modern **Next.js (App Router)** mimarisi  
-- **Tailwind CSS** ile responsive tasarım  
-- **JWT token yönetimi** ve otomatik Authorization header ekleme  
-- Login ve logout işlevselliği (`useAuth` hook’u ile)  
-- Dashboard sayfasında kullanıcı bilgilerini görüntüleme  
-- Backend URL ve API key’i `.env.local` üzerinden kolayca değiştirilebilir  
-- ReqRes demo API ile test edilebilir; gerçek backend ile sorunsuz geçiş  
-
----
-
-## 🔑 ReqRes Demo Kullanıcı
-
-- Email: `eve.holt@reqres.in`  
-- Password: `cityslicka`  
-
-> Not: Bu kullanıcı sadece ReqRes demo backend ile test amaçlıdır. Gerçek backend geldiğinde kendi kullanıcılarınızla çalışabilirsiniz.
-
 ---
 
 ## ⚙️ Kurulum
@@ -47,15 +22,7 @@ npm install
 
 
 ```
-NEXT_PUBLIC_API_URL=https://reqres.in/api
-NEXT_PUBLIC_API_KEY=reqres-free-v1
-```
-
-- Backend geldiğinde sadece URL ve gerekiyorsa API key değiştirin:
-
-```
-NEXT_PUBLIC_API_URL=https://api.sizin-backend.com
-NEXT_PUBLIC_API_KEY=backend-key-123
+NEXT_PUBLIC_API_URL=http://localhost:8080/api
 ```
 
 4. Geliştirme sunucusunu başlatın:
@@ -68,6 +35,14 @@ npm run dev
 - Uygulama varsayılan olarak: [http://localhost:3000](http://localhost:3000)  
 
 ---
+
+## 🔑 Demo Kullanıcı
+
+- Email: `admin@example.com`  
+- Password: `Admin123!`
+
+---
+
 
 ## 🔗 Kullanım
 
@@ -105,12 +80,42 @@ const data = await apiFetch("/users/2"); // Örnek endpoint
 hsdarena-frontend/
 │
 ├─ src/
-│ ├─ app/ # Next.js sayfaları (page.tsx, dashboard, login vs.)
-│ ├─ components/ # UI komponentleri (butonlar, formlar, layout)
-│ ├─ hooks/ # useAuth hook ve diğer hooklar
-│ ├─ lib/ # apiFetch helper
-│ ├─ types/ # TypeScript tip tanımlamaları
-│
+│   ├─ app/
+|   |   ├─ (auth)/
+|   |   │     └─ login/
+|   |   │          └─ page.tsx              → Kullanıcı giriş ekranı (admin girişi için kullanılır)
+|   |   │ 
+|   |   ├─ admin/
+|   |   │     ├─ page.tsx                   → Admin dashboard (giriş yapan admin için ana panel)
+|   |   │     └─ quiz/
+|   |   │          ├─ create/
+|   |   │          │    └─ page.tsx         → Yeni quiz oluşturma sayfası
+|   |   │          ├─ join/
+|   |   │               └─ [sessionCode]/
+|   |   │                    └─ page.tsx    → Quiz QR kod sayfası
+|   |   │          ├─ result/
+|   |   │          │    └─ page.tsx         → Quiz sonuçlarını görüntüleme sayfası
+|   |   │          └─ session/
+|   |   │               └─ [sessionCode]/
+|   |   │                    └─ page.tsx    → Belirli bir quiz oturumuna ait yönetim ekranı
+|   |   │ 
+|   |   ├─ team/
+|   |   |     ├─ join/
+|   |   |     │    └─ page.tsx              → Takımın quiz oturumuna katılma ekranı (takım adı + session kodu girişi)
+|   |   |     └─ quiz/
+|   |   |          └─ [sessionCode]/
+|   |   |               └─ page.tsx         → Takımın katıldığı quizin oynandığı ekran
+|   |   ├─ layout.tsx                     
+|   |   └─ page.tsx                         → Ana sayfa (quiz oluştur / quize katıl)
+|   |
+|   ├─ components/  # Uygulamada tekrar kullanılabilir UI bileşenlerini içerir (butonlar, formlar, layout vb.).
+|   ├─ hooks/       # Özel React hook’larını ve reusable state yönetim logic’lerini içerir.
+|   ├─ lib/         # Uygulama genelinde kullanılan yardımcı kütüphaneler ve fonksiyonları içerir.
+|   ├─ services/    # API çağrıları ve backend ile iletişimi sağlayan servisleri içerir.
+|   ├─ types/       # TypeScript tiplerini ve interface’leri barındırır.
+|   ├─ styles/      # Global ve bileşen bazlı stilleri içerir (CSS, SCSS, Tailwind config vb.).
+|   ├─ utils/       # Genel amaçlı yardımcı fonksiyonlar ve küçük araçlar için klasör.
+|
 ├─ .env.local # API URL ve key (push etmeyin!)
 ├─ package.json
 ├─ next.config.js
@@ -183,10 +188,3 @@ git pull origin main
 - Ana branch’e **doğrudan commit yapma**; sadece PR üzerinden merge et  
 
 ---
-
-## 📌 Notlar
-
-- `.env.local` **asla commit edilmemeli**; API key ve token içerir.  
-- ReqRes demo backend sadece **tek bir login kullanıcısı** ile çalışır (email: `eve.holt@reqres.in`, password: `cityslicka`).  
-- Gerçek backend geldiğinde `.env.local` güncellemek yeterlidir; frontend koduna dokunmaya gerek yok.  
-
