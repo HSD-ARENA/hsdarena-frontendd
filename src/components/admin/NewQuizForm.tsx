@@ -66,12 +66,17 @@ const YeniQuizForm = () => {
             return;
         } else {
             e.preventDefault();
+            const labels = ['A', 'B', 'C', 'D'];
             const payload = {
                 index: questions.length,
                 text: questionText,
                 type: "MCQ",
-                choices: options.map((opt, i) => ({ id: "choice_" + (i + 1).toString(), text: opt })),
-                correctAnswer: "choice_" + (correctIndex + 1).toString(),
+                choices: options.map((opt, i) => ({
+                    id: labels[i],
+                    text: opt,
+                })),
+
+                correctAnswer: labels[correctIndex],
                 timeLimitSec: 30,
                 points: 10
             };
