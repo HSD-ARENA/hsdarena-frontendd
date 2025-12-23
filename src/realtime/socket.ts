@@ -11,11 +11,11 @@ class SocketManager {
   /**
    * Connect to WebSocket server with auth token
    */
-  connect(token: string): void {
+  connect(token: string): Promise<void> {
     // If already connected with same token, do nothing
     if (this.socket?.connected && this.currentToken === token) {
       console.log('✅ Already connected');
-      return;
+      return Promise.resolve();
     }
 
     // Disconnect old connection if token changed
@@ -35,17 +35,27 @@ class SocketManager {
       }
     });
 
-    // Connection events
-    this.socket.on('connect', () => {
-      console.log('✅ Connected, Socket ID:', this.socket?.id);
-    });
+    // Return a promise that resolves when connected
+    return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Connection timeout'));
+      }, 5000);
 
-    this.socket.on('disconnect', () => {
-      console.log('👋 Disconnected');
-    });
+      this.socket!.on('connect', () => {
+        clearTimeout(timeout);
+        console.log('✅ Connected, Socket ID:', this.socket?.id);
+        resolve();
+      });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('❌ Connection error:', error.message);
+      this.socket!.on('disconnect', () => {
+        console.log('👋 Disconnected');
+      });
+
+      this.socket!.on('connect_error', (error) => {
+        clearTimeout(timeout);
+        console.error('❌ Connection error:', error.message);
+        reject(error);
+      });
     });
   }
 

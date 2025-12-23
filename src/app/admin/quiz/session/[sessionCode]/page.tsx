@@ -27,6 +27,7 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
     const [screen, setScreen] = useState<"question" | "stats" | "scoreboard">("question");
     const [stats, setStats] = useState<any>(null);
     const [answeredCount, setAnsweredCount] = useState(0);
+    const [timeRemaining, setTimeRemaining] = useState<number | null>(null); // Countdown timer in seconds
 
     const options = ['H', 'S', 'D', 'A'];
     const buttonVariants = ["button1", "button2", "button3", "button4"] as const;
@@ -53,8 +54,8 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
                 // Get admin token
                 const token = localStorage.getItem("token") || "";
 
-                // Connect WebSocket
-                socketManager.connect(token);
+                // Connect WebSocket - wait for connection
+                await socketManager.connect(token);
 
                 // Join session
                 socketManager.joinSession(sessionCode);
@@ -70,12 +71,19 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
 
                 // New question started
                 unsubscribers.push(
-                    socketManager.on('question:started', (data: any) => {
+                    socketManager.on('question:started', async (data: any) => {
                         console.log("❓ Question started:", data);
-                        fetchCurrentQuestion(sessionCode);
+                        const questionData = await fetchCurrentQuestion(sessionCode);
                         setScreen("question");
                         setStats(null);
                         setAnsweredCount(0);
+                        // Initialize timer from fetched question data
+                        if (questionData?.timeLimitSec) {
+                            setTimeRemaining(questionData.timeLimitSec);
+                        } else if (data.question?.timeLimitSec) {
+                            // Fallback to event data
+                            setTimeRemaining(data.question.timeLimitSec);
+                        }
                     })
                 );
 
@@ -84,6 +92,19 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
                     socketManager.on('answer:submitted', (data: any) => {
                         console.log("✅ Team answered:", data.teamId);
                         setAnsweredCount(prev => prev + 1);
+                    })
+                );
+
+                // Time's up - auto navigate to scoreboard
+                unsubscribers.push(
+                    socketManager.on('time:up', (data: any) => {
+                        console.log("⏰ Time's up!");
+                        setTimeRemaining(0);
+                        // Auto-navigate to scoreboard after brief delay
+                        setTimeout(async () => {
+                            await fetchScoreboard(sessionCode);
+                            setScreen("scoreboard");
+                        }, 1000);
                     })
                 );
 
@@ -118,6 +139,28 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
         setup();
     }, [sessionCode]);
 
+    // Countdown timer
+    useEffect(() => {
+        if (timeRemaining === null || timeRemaining <= 0) return;
+
+        const interval = setInterval(() => {
+            setTimeRemaining(prev => {
+                if (prev === null || prev <= 1) return 0;
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [timeRemaining]);
+
+    // Fallback: Initialize timer when currentQuestion changes (for first question)
+    useEffect(() => {
+        if (currentQuestion?.timeLimitSec && screen === "question" && timeRemaining === null) {
+            console.log("🔧 Fallback timer init:", currentQuestion.timeLimitSec);
+            setTimeRemaining(currentQuestion.timeLimitSec);
+        }
+    }, [currentQuestion, screen, timeRemaining]);
+
     // Show answer stats
     const showStats = () => {
         setScreen("stats");
@@ -131,9 +174,9 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
 
     // Go to next question
     const nextQuestion = () => {
-        console.log("⏭️ Next question");
+        console.log("⏭️ Requesting next question");
         socketManager.emit("admin:next-question", { sessionCode });
-        setScreen("question");
+        // Don't set screen here - wait for question:started event
     };
 
     // End session
@@ -145,13 +188,12 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
         socketManager.emit("admin:end-session", { sessionCode });
 
         alert("Quiz bitti!");
-        window.location.href = "/admin/quiz/list";
+        window.location.href = "/admin";
     };
 
     // Right arrow navigation
     const handleRightArrow = () => {
-        if (screen === "question") showStats();
-        else if (screen === "stats") showScoreboard();
+        if (screen === "question") showScoreboard(); // Skip stats, go directly to scoreboard
         else if (screen === "scoreboard") nextQuestion();
     };
 
@@ -165,7 +207,7 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
     }
 
     const totalQuestions = sessionDetail?.quiz?.questions.length ?? 1;
-    const questionIndex = currentQuestion.indexInQuiz ?? 0;
+    const questionIndex = (currentQuestion.indexInQuiz ?? 0) + 1; // Display as 1-based
 
     return (
         <div className="flex flex-col items-center w-full text-white min-h-screen">
@@ -201,6 +243,11 @@ export default function AdminQuizSessionPage({ params }: PageProps) {
                             alt="question"
                             className="mb-4 max-h-[300px]"
                         />
+                    )}
+                    {timeRemaining !== null && timeRemaining > 0 && (
+                        <div className="mb-6 text-5xl font-bold text-white bg-red-600 px-8 py-4 rounded-xl shadow-lg">
+                            ⏱️ {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                        </div>
                     )}
                     <h3 className="text-[30px] mb-[12px]">{currentQuestion.text}</h3>
                     <div className="grid grid-cols-2 gap-[12px] w-[800px] h-[275px]">

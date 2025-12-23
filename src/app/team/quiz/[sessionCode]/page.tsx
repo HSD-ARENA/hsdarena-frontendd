@@ -15,6 +15,8 @@ export default function TeamQuizPage({ params }: PageProps) {
     const [currentQuestion, setCurrentQuestion] = useState<any>(null);
     const [timeWarning, setTimeWarning] = useState<number | null>(null);
     const [result, setResult] = useState<{ isCorrect: boolean; points: number } | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
     const setupDone = useRef(false);
     const router = useRouter();
 
@@ -48,8 +50,8 @@ export default function TeamQuizPage({ params }: PageProps) {
             try {
                 console.log("🚀 Team setup for:", sessionCode);
 
-                // Connect WebSocket
-                socketManager.connect(teamToken!);
+                // Connect WebSocket - wait for connection
+                await socketManager.connect(teamToken!);
 
                 // Join session
                 socketManager.joinSession(sessionCode);
@@ -65,6 +67,11 @@ export default function TeamQuizPage({ params }: PageProps) {
                         setScreen("question");
                         setTimeWarning(null);
                         setResult(null);
+                        setIsSubmitting(false);
+                        // Initialize timer
+                        if (data.question?.timeLimitSec) {
+                            setTimeRemaining(data.question.timeLimitSec);
+                        }
                     })
                 );
 
@@ -73,6 +80,19 @@ export default function TeamQuizPage({ params }: PageProps) {
                     socketManager.on('question:time-warning', (data: any) => {
                         console.log("⏰ Time warning:", data.remainingSeconds);
                         setTimeWarning(data.remainingSeconds);
+                    })
+                );
+
+                // Time's up - show waiting screen
+                unsubscribers.push(
+                    socketManager.on('time:up', (data: any) => {
+                        console.log("⏰ Time's up!");
+                        setTimeRemaining(0);
+                        // If not answered, show "time expired" result
+                        if (screen !== "result") {
+                            setScreen("result");
+                            setResult({ isCorrect: false, points: 0 });
+                        }
                     })
                 );
 
@@ -101,13 +121,17 @@ export default function TeamQuizPage({ params }: PageProps) {
 
     // Submit answer
     const handleSubmit = async (choiceId: string) => {
-        if (!currentQuestion) return;
+        if (!currentQuestion || isSubmitting) return; // Prevent if already submitting
+
+        // Lock question ID at submit time to prevent race conditions
+        const questionIdAtSubmit = currentQuestion.id;
 
         try {
+            setIsSubmitting(true);
             setScreen("answered");
 
             // Submit via HTTP POST
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/answer`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/${sessionCode}/answer`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -115,7 +139,7 @@ export default function TeamQuizPage({ params }: PageProps) {
                 },
                 body: JSON.stringify({
                     sessionCode,
-                    questionId: currentQuestion.id,
+                    questionId: questionIdAtSubmit, // Use locked ID
                     answerPayload: { choiceId }
                 })
             });
@@ -138,6 +162,7 @@ export default function TeamQuizPage({ params }: PageProps) {
             console.error("❌ Submit failed:", error);
             alert("Cevap gönderilemedi!");
             setScreen("question");
+            setIsSubmitting(false); // Reset on error
         }
     };
 
@@ -207,6 +232,12 @@ export default function TeamQuizPage({ params }: PageProps) {
                             <div className="text-8xl mb-4">✅</div>
                             <h2 className="text-4xl font-bold mb-2 text-green-400">Doğru!</h2>
                             <p className="text-2xl">+{result.points} puan kazandınız</p>
+                        </>
+                    ) : timeRemaining === 0 ? (
+                        <>
+                            <div className="text-8xl mb-4">⏰</div>
+                            <h2 className="text-4xl font-bold mb-2 text-gray-400">Süre Doldu!</h2>
+                            <p className="text-2xl">Soruyu boş bıraktınız</p>
                         </>
                     ) : (
                         <>

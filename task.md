@@ -130,8 +130,43 @@ refactor: migrate to domain structure, add realtime and update types
 
 ---
 
+### 23 Aralık 2025 - Yunus Özdemir
+
+**Değiştirilen Dosyalar:**
+- `src/components/admin/NewQuizForm.tsx` - Her soru için süre limiti input'u eklendi (5-240 saniye arası dropdown)
+- `src/app/admin/quiz/session/[sessionCode]/page.tsx` - Admin ekranına countdown timer UI, `time:up` event dinleme, otomatik skorboard geçişi ve ilk soru timer bug fix'i eklendi
+- `src/app/team/quiz/[sessionCode]/page.tsx` - Takım ekranına countdown timer UI, `time:up` event dinleme ve "Süre Doldu" mesajı eklendi
+
+**Eklenen Dosyalar:**
+- Yok (sadece mevcut dosyalar güncellendi)
+
+**Silinen Dosyalar:**
+- Yok
+
+**Açıklama:**
+Quiz sorularına süre limiti özelliği eklendi. Admin quiz oluştururken her soru için 5-240 saniye arası süre belirleyebiliyor. Backend'den gelen `time:up` event'i ile hem admin hem de takım ekranlarında otomatik geçişler sağlandı. Admin ekranında süre bitince otomatik skorboard'a geçiş yapılıyor, takım ekranında ise cevap verilmemişse "Süre Doldu - Soruyu boş bıraktınız" mesajı gösteriliyor. İlk soruda timer görünmeme bug'ı fallback `useEffect` ile çözüldü.
+
+**Commit Mesajı:**
+```
+feat: implement quiz timer countdown UI for admin and team screens
+
+- Add time limit dropdown (5-240s) to quiz creation form
+- Add countdown timer display on admin question screen
+- Add auto-navigation to scoreboard when time expires (admin)
+- Add countdown timer display on team question screen  
+- Add "Süre Doldu" message when time expires (team)
+- Fix first question timer initialization bug with fallback useEffect
+
+Coordinates with backend timer management (quiz.gateway.ts).
+Backend auto-broadcasts time:up event when timer expires.
+```
+
+**Push Tarihi:** [Bekliyor]
+
+---
+
 **Son Güncelleme:** 23 Aralık 2025  
-**Toplam Kayıt:** 6
+**Toplam Kayıt:** 7
 ````
 
 ---

@@ -14,6 +14,7 @@ const YeniQuizForm = () => {
     const [options, setOptions] = useState(["", "", "", ""]);
     const [correctIndex, setCorrectIndex] = useState(null as number | null);
     const [questionText, setQuestionText] = useState("");
+    const [timeLimitSec, setTimeLimitSec] = useState(30); // Default 30 seconds
     const [title, setTitle] = useState("");
     const { createQuiz, loading } = useQuiz();
     const router = useRouter();
@@ -77,7 +78,7 @@ const YeniQuizForm = () => {
                 })),
 
                 correctAnswer: labels[correctIndex] as Choice,
-                timeLimitSec: 30,
+                timeLimitSec: timeLimitSec, // Use selected time limit
                 points: 10
             };
             console.log("Saving question:", payload);
@@ -87,6 +88,7 @@ const YeniQuizForm = () => {
             setQuestionText("");
             setOptions(["", "", "", ""]);
             setCorrectIndex(null);
+            setTimeLimitSec(30); // Reset to default
             // You can send this payload to your backend or store it locally
             alert("Soru kaydedildi!");
         }
@@ -125,6 +127,25 @@ const YeniQuizForm = () => {
                         onSelect={() => setCorrectIndex(i)}
                     />
                 ))}
+
+                {/* Time Limit Selection */}
+                <div className="flex flex-col gap-2">
+                    <label className="text-white text-sm font-semibold">Süre Limiti</label>
+                    <select
+                        value={timeLimitSec}
+                        onChange={(e) => setTimeLimitSec(Number(e.target.value))}
+                        className="p-3 rounded-lg bg-white text-black"
+                    >
+                        <option value={5}>5 saniye</option>
+                        <option value={10}>10 saniye</option>
+                        <option value={30}>30 saniye</option>
+                        <option value={60}>1 dakika</option>
+                        <option value={120}>2 dakika</option>
+                        <option value={180}>3 dakika</option>
+                        <option value={240}>4 dakika</option>
+                    </select>
+                </div>
+
                 <div className="flex justify-between">
                     <Button
                         type="button"

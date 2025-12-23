@@ -43,12 +43,32 @@ const QRDisplay: FC<QRDisplayProps> = ({ sessionCode }) => {
         alert("URL kopyalandı!");
     };
 
-    const startSession = () => {
-        // Start first question
-        socketManager.emit("admin:next-question", { sessionCode });
+    const startSession = async () => {
+        try {
+            // 1. Start session (set status to ACTIVE)
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/sessions/${sessionCode}/start`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            });
 
-        console.log("✅ Quiz started");
-        router.push(`/admin/quiz/session/${sessionCode}`);
+            if (!response.ok) {
+                throw new Error("Failed to start session");
+            }
+
+            console.log("✅ Session started (ACTIVE)");
+
+            // 2. Broadcast first question
+            socketManager.emit("admin:next-question", { sessionCode });
+            console.log("✅ First question requested");
+
+            // 3. Navigate to session page
+            router.push(`/admin/quiz/session/${sessionCode}`);
+        } catch (error) {
+            console.error("❌ Failed to start session:", error);
+            alert("Quiz başlatılamadı!");
+        }
     };
 
     return (
