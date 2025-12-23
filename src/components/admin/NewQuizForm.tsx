@@ -2,22 +2,23 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuiz } from "@/hooks/useQuiz";
+import { useQuiz } from "@/domains/quiz/useQuiz";
 import Input from "../ui/Input";
 import RadioButton from "../ui/RadioButton";
 import OverlaySpinner from "../ui/OverlaySpinner";
 import Button from "../ui/Button";
-import { QuizQuestion } from "@/types/quiz";
+import { QuizCreateQuestion } from "@/domains/questions/question.types";
+import { Choice, Type } from "@/types/common";
 
 const YeniQuizForm = () => {
     const [options, setOptions] = useState(["", "", "", ""]);
     const [correctIndex, setCorrectIndex] = useState(null as number | null);
     const [questionText, setQuestionText] = useState("");
     const [title, setTitle] = useState("");
-    const { create, fectSession, loading } = useQuiz();
+    const { createQuiz, loading } = useQuiz();
     const router = useRouter();
 
-    const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+    const [questions, setQuestions] = useState<QuizCreateQuestion[]>([]);
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +31,7 @@ const YeniQuizForm = () => {
         } else {
             e.preventDefault();
             try {
-                const res = await create({
+                const res = await createQuiz({
                     title,
                     settings: {
                         shuffleQuestions: true,
@@ -39,8 +40,7 @@ const YeniQuizForm = () => {
                     },
                     questions, // MVP için boş, sorular sonraki adımda eklenebilir
                 });
-                const response = await fectSession(res.id);
-                router.replace(`/admin/quiz/join/${response?.sessionCode}`);
+                router.replace(`/admin`);
             } catch (err: any) {
                 alert(err.message);
             }
@@ -70,13 +70,13 @@ const YeniQuizForm = () => {
             const payload = {
                 index: questions.length,
                 text: questionText,
-                type: "MCQ",
+                type: "MCQ" as Type,
                 choices: options.map((opt, i) => ({
-                    id: labels[i],
+                    id: labels[i] as Choice,
                     text: opt,
                 })),
 
-                correctAnswer: labels[correctIndex],
+                correctAnswer: labels[correctIndex] as Choice,
                 timeLimitSec: 30,
                 points: 10
             };

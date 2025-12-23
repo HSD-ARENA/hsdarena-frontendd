@@ -1,186 +1,223 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSocket } from "@/hooks/useSocket";
-import { useQuiz } from "@/hooks/useQuiz";
-import { useAnswer } from "@/hooks/useAnswer";
+import { useEffect, useState, useRef } from "react";
+import { socketManager } from "@/realtime/socket";
 import Button from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
 
 interface PageProps {
-    params: Promise<{ sessionCode: string }>;
+    params: { sessionCode: string } | Promise<{ sessionCode: string }>;
 }
 
 export default function TeamQuizPage({ params }: PageProps) {
     const [sessionCode, setSessionCode] = useState("");
-    const [token, setToken] = useState<string | null>(null);
-
-    const { fetchQuestions, currentQuiz } = useQuiz();
-    const { send } = useAnswer();
+    const [screen, setScreen] = useState<"waiting" | "question" | "answered" | "result">("waiting");
     const [currentQuestion, setCurrentQuestion] = useState<any>(null);
-    const [questionIndex, setQuestionIndex] = useState(0);
+    const [timeWarning, setTimeWarning] = useState<number | null>(null);
+    const [result, setResult] = useState<{ isCorrect: boolean; points: number } | null>(null);
+    const setupDone = useRef(false);
+    const router = useRouter();
 
-    const [uiState, setUIState] = useState<
-        "question" | "answered" | "result" | "waiting"
-    >("question");
+    const options = ['H', 'S', 'D', 'A'];
+    const buttonVariants = ["button1", "button2", "button3", "button4"] as const;
 
-    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-    const [resultData, setResultData] = useState<any>(null);
-
-    // params çöz
+    // Extract session code
     useEffect(() => {
-        params.then((p) => setSessionCode(p.sessionCode));
+        async function getParams() {
+            const resolvedParams = params instanceof Promise ? await params : params;
+            setSessionCode(resolvedParams.sessionCode);
+        }
+        getParams();
     }, [params]);
 
-    // token çöz
+    // Setup WebSocket - ONLY ONCE
     useEffect(() => {
-        const t = localStorage.getItem("teamToken");
-        setToken(t);
-    }, []);
+        if (!sessionCode || setupDone.current) return;
 
-    const socket = useSocket(token ?? "");
+        // Check team token
+        const teamToken = localStorage.getItem("teamToken");
+        if (!teamToken) {
+            alert("Takım token'ı bulunamadı!");
+            router.push(`/team/join?sessionCode=${sessionCode}`);
+            return;
+        }
 
-    // Soruları API’den çek
-    useEffect(() => {
-        if (!sessionCode) return;
-        fetchQuestions(sessionCode);
-    }, [sessionCode]);
+        setupDone.current = true;
 
-    // İlk soruyu yükle
-    useEffect(() => {
-        if (!currentQuiz) return;
-        setCurrentQuestion(currentQuiz.questions[0]);
-        setQuestionIndex(0);
-        setUIState("question");
-    }, [currentQuiz]);
+        async function setup() {
+            try {
+                console.log("🚀 Team setup for:", sessionCode);
 
-    // WEBSOCKET EVENTLERİ
-    useEffect(() => {
-        if (!socket) return;
+                // Connect WebSocket
+                socketManager.connect(teamToken!);
 
-        // Admin sonraki soruyu başlattı
-        socket.on("new-question", (q) => {
-            setCurrentQuestion(q);
-            setSelectedAnswer(null);
-            setUIState("question");
+                // Join session
+                socketManager.joinSession(sessionCode);
 
-            const idx = currentQuiz?.questions.findIndex(
-                (x: any) => x.id === q.id
-            );
-            if (idx !== undefined && idx !== -1) setQuestionIndex(idx);
-        });
+                // Listen to events
+                const unsubscribers: Array<() => void> = [];
 
-        // Admin soru cevap ekranını açtı
-        socket.on("answer-stats-updated", (stats) => {
-            setResultData(stats);
-            setUIState("result");
-        });
+                // Question started
+                unsubscribers.push(
+                    socketManager.on('question:started', (data: any) => {
+                        console.log("❓ Question started:", data);
+                        setCurrentQuestion(data.question);
+                        setScreen("question");
+                        setTimeWarning(null);
+                        setResult(null);
+                    })
+                );
 
-        // Admin yeni soru açana kadar bekle
-        socket.on("scoreboard-updated", () => {
-            setUIState("waiting");
-        });
+                // Time warning
+                unsubscribers.push(
+                    socketManager.on('question:time-warning', (data: any) => {
+                        console.log("⏰ Time warning:", data.remainingSeconds);
+                        setTimeWarning(data.remainingSeconds);
+                    })
+                );
 
-        return () => {
-            socket.off("new-question");
-            socket.off("answer-stats-updated");
-            socket.off("scoreboard-updated");
-        };
-    }, [socket, currentQuiz]);
+                // Session ended
+                unsubscribers.push(
+                    socketManager.on('session:ended', () => {
+                        console.log("🏁 Session ended");
+                        alert("Quiz bitti!");
+                        router.push("/team/finished");
+                    })
+                );
 
-    // CEVAP GÖNDER
-    async function submitAnswer() {
-        if (!selectedAnswer || !currentQuestion) return;
+                console.log("✅ Setup complete");
 
-        setUIState("answered");
+                // Cleanup
+                return () => {
+                    unsubscribers.forEach(unsub => unsub());
+                };
+            } catch (error) {
+                console.error("❌ Setup failed:", error);
+            }
+        }
 
-        const body = {
-            sessionId: currentQuiz?.sessionId,
-            questionId: currentQuestion.id,
-            answerPayload: { id: selectedAnswer },
-            nonce: `${Date.now()}`,
-        };
+        setup();
+    }, [sessionCode, router]);
 
-        const res = await fetch("http://localhost:8080/api/answer", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("teamToken")}`,
-            },
-            body: JSON.stringify(body),
-        });
+    // Submit answer
+    const handleSubmit = async (choiceId: string) => {
+        if (!currentQuestion) return;
 
-        const json = await res.json();
-        setResultData(json); // doğru/yanlış verisi burada
-    }
+        try {
+            setScreen("answered");
 
-    // --------------------------
-    // RENDER AKIŞI
-    // --------------------------
+            // Submit via HTTP POST
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/answer`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("teamToken")}`
+                },
+                body: JSON.stringify({
+                    sessionCode,
+                    questionId: currentQuestion.id,
+                    answerPayload: { choiceId }
+                })
+            });
 
-    if (!currentQuestion) return <div>Loading...</div>;
+            if (!response.ok) {
+                throw new Error("Answer submission failed");
+            }
+
+            const data = await response.json();
+
+            // Show result
+            setResult({
+                isCorrect: data.isCorrect,
+                points: data.points
+            });
+            setScreen("result");
+
+            console.log("✅ Answer submitted:", data);
+        } catch (error) {
+            console.error("❌ Submit failed:", error);
+            alert("Cevap gönderilemedi!");
+            setScreen("question");
+        }
+    };
 
     return (
-        <div style={{ padding: 20 }}>
-            <h1>Team Quiz - {sessionCode}</h1>
-
-            {/* 1 — SORU EKRANI */}
-            {uiState === "question" && (
-                <>
-                    <h2>{currentQuestion.text}</h2>
-                    {currentQuestion.choices.map((c: any) => (
-                        <button
-                            key={c.id}
-                            style={{
-                                display: "block",
-                                padding: 12,
-                                marginTop: 10,
-                                border:
-                                    selectedAnswer === c.id
-                                        ? "2px solid black"
-                                        : "1px solid #aaa",
-                            }}
-                            onClick={() => setSelectedAnswer(c.id)}
-                        >
-                            {c.text}
-                        </button>
-                    ))}
-
-                    <Button
-                        onClick={submitAnswer}
-                        disabled={!selectedAnswer}
-                        style={{ marginTop: 20 }}
-                    >
-                        Cevapla
-                    </Button>
-                </>
-            )}
-
-            {/* 2 — CEVAPLANDI, BEKLE */}
-            {uiState === "answered" && (
-                <h2>Cevabın alındı! Admin sonucu açıklayana kadar bekle…</h2>
-            )}
-
-            {/* 3 — DOĞRU/YANLIŞ SONUCU */}
-            {uiState === "result" && (
-                <div>
-                    <h1>
-                        {resultData?.isCorrect ? "🎉 Doğru!" : "❌ Yanlış!"}
-                    </h1>
-
-                    {resultData?.isCorrect && (
-                        <p>+{resultData.pointsAwarded} puan</p>
-                    )}
-
-                    <p>
-                        Admin yeni soruyu başlatınca otomatik geçiş
-                        yapılacaktır.
-                    </p>
+        <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
+            {/* WAITING SCREEN */}
+            {screen === "waiting" && (
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold mb-4">Soru Bekleniyor...</h2>
+                    <p className="text-xl opacity-70">Quiz başlatıldığında soru görünecek</p>
                 </div>
             )}
 
-            {/* 4 — Admin yeni soruyu başlatana kadar */}
-            {uiState === "waiting" && (
-                <h2>Sonraki soruyu admin başlatıyor…</h2>
+            {/* QUESTION SCREEN */}
+            {screen === "question" && currentQuestion && (
+                <div className="flex flex-col items-center w-full max-w-4xl">
+                    {/* Time Warning */}
+                    {timeWarning && (
+                        <div className="mb-4 text-yellow-400 text-xl font-bold animate-pulse">
+                            ⏰ {timeWarning} saniye kaldı!
+                        </div>
+                    )}
+
+                    {/* Question Image */}
+                    {currentQuestion.imageUrl && (
+                        <img
+                            src={currentQuestion.imageUrl}
+                            alt="question"
+                            className="mb-4 max-h-[300px]"
+                        />
+                    )}
+
+                    {/* Question Text */}
+                    <h3 className="text-[30px] mb-6 text-center">{currentQuestion.text}</h3>
+
+                    {/* Choices */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                        {currentQuestion.choices.map((choice: any, index: number) => (
+                            <Button
+                                key={choice.id}
+                                onClick={() => handleSubmit(choice.id)}
+                                variant={buttonVariants[index]}
+                                className="flex items-center justify-start p-6 text-left"
+                            >
+                                <div className="px-4 text-[40px] font-bold">{options[index]}</div>
+                                <div className="text-[20px]">{choice.text}</div>
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ANSWERED SCREEN */}
+            {screen === "answered" && (
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold mb-4">Cevabınız Gönderildi!</h2>
+                    <p className="text-xl opacity-70">Sonuç bekleniyor...</p>
+                    <div className="mt-6 animate-spin text-5xl">⏳</div>
+                </div>
+            )}
+
+            {/* RESULT SCREEN */}
+            {screen === "result" && result && (
+                <div className="text-center">
+                    {result.isCorrect ? (
+                        <>
+                            <div className="text-8xl mb-4">✅</div>
+                            <h2 className="text-4xl font-bold mb-2 text-green-400">Doğru!</h2>
+                            <p className="text-2xl">+{result.points} puan kazandınız</p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-8xl mb-4">❌</div>
+                            <h2 className="text-4xl font-bold mb-2 text-red-400">Yanlış!</h2>
+                            <p className="text-2xl">Puan kazanamadınız</p>
+                        </>
+                    )}
+
+                    <p className="mt-6 text-xl opacity-70">Bir sonraki soru bekleniyor...</p>
+                </div>
             )}
         </div>
     );
