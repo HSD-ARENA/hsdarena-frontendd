@@ -75,7 +75,7 @@ class SocketManager {
   /**
    * Emit an event to the server
    */
-  emit(event: string, data: any): void {
+  emit(event: string, data: unknown): void {
     if (!this.socket?.connected) {
       console.error('❌ Not connected. Cannot emit event:', event);
       return;
@@ -89,7 +89,7 @@ class SocketManager {
    * Listen to an event from the server
    * Returns unsubscribe function
    */
-  on<T = any>(event: string, handler: (data: T) => void): () => void {
+  on<T>(event: string, handler: (data: T) => void): () => void {
     if (!this.socket) {
       console.error('❌ Socket not initialized. Call connect() first.');
       return () => { };

@@ -1,12 +1,8 @@
 "use client";
 
 import { FC, useEffect, useState } from "react";
-import { getScoreboard } from "@/services/scoreboard";
-
-interface TeamScore {
-    teamName: string;
-    score: number;
-}
+import { fetchScoreboard } from "@/domains/session/session.service";
+import { LeaderboardEntry } from "@/domains/session/scoreboard.types";
 
 interface ScoreboardTableProps {
     sessionCode: string;
@@ -14,10 +10,10 @@ interface ScoreboardTableProps {
 }
 
 const ScoreboardTable: FC<ScoreboardTableProps> = ({ sessionCode, top = 10 }) => {
-    const [scores, setScores] = useState<TeamScore[]>([]);
+    const [scores, setScores] = useState<LeaderboardEntry[]>([]);
 
     useEffect(() => {
-        getScoreboard(sessionCode).then(res => {
+        fetchScoreboard(sessionCode).then((res) => {
             setScores(res.leaderboard || []);
         });
     }, [sessionCode]);

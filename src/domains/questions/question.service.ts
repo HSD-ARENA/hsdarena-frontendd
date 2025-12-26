@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { QuestionDetail, QuizCreateQuestion, QuizAddQuestionRequest, QuizAddQuestionResponse, QuizUpdateQuestionRequest, QuizUpdateQuestionResponse } from "@/domains/questions/question.types";
+import { QuestionDetail, QuizAddQuestionRequest, QuizAddQuestionResponse, QuizUpdateQuestionRequest, QuizUpdateQuestionResponse } from "@/domains/questions/question.types";
 
 export const addQuestionToQuiz = async (quizId: string, data: QuizAddQuestionRequest): Promise<QuizAddQuestionResponse> =>
     apiFetch(`/admin/quizzes/${quizId}/questions`, { method: "POST", body: JSON.stringify(data) });

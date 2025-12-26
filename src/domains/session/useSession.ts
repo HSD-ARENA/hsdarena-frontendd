@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
     createSession,
     fetchSession,
@@ -49,7 +49,7 @@ export function useSession() {
         useState<CurrentQuestionResponse | null>(null);
 
     // CREATE SESSION
-    const create = (
+    const create = useCallback((
         quizId: string,
         payload: SessionCreateRequest
     ): Promise<SessionCreateResponse> =>
@@ -57,20 +57,20 @@ export function useSession() {
             const created = await createSession(quizId, payload);
             setSessionSummary(created);
             return created;
-        });
+        }), [run]);
 
     // FETCH SESSION DETAIL
-    const fetchByCode = (
+    const fetchByCode = useCallback((
         code: string
     ): Promise<SessionDetailResponse> =>
         run(async () => {
             const detail = await fetchSession(code);
             setSessionDetail(detail);
             return detail;
-        });
+        }), [run]);
 
     // START SESSION
-    const start = (code: string): Promise<SessionStartResponse> =>
+    const start = useCallback((code: string): Promise<SessionStartResponse> =>
         run(async () => {
             const res = await startSession(code);
 
@@ -84,54 +84,54 @@ export function useSession() {
             );
 
             return res;
-        });
+        }), [run]);
 
 
     // FETCH SESSION QUIZ
-    const fetchQuiz = (code: string): Promise<SessionQuisForTeamsResponse> =>
+    const fetchQuiz = useCallback((code: string): Promise<SessionQuisForTeamsResponse> =>
         run(async () => {
             const quiz = await fetchSessionQuiz(code);
             setSessionQuiz(quiz);
             return quiz;
-        });
+        }), [run]);
 
 
     // FETCH CURRENT QUESTION
-    const fetchQuestion = (
+    const fetchQuestion = useCallback((
         code: string
     ): Promise<CurrentQuestionResponse> =>
         run(async () => {
             const question = await fetchCurrentQuestion(code);
             setCurrentQuestion(question);
             return question;
-        });
+        }), [run]);
 
     // SUBMIT ANSWER
-    const answer = (
+    const answer = useCallback((
         code: string,
         payload: AnswerRequest
     ): Promise<AnswerResponse> =>
-        run(() => submitAnswer(code, payload));
+        run(() => submitAnswer(code, payload)), [run]);
 
     // FETCH TEAMS
-    const fetchAllTeams = (
+    const fetchAllTeams = useCallback((
         code: string
     ): Promise<SessionTeamsResponse> =>
         run(async () => {
             const data = await fetchTeams(code);
             setTeams(data);
             return data;
-        });
+        }), [run]);
 
     // FETCH SCOREBOARD
-    const fetchBoard = (
+    const fetchBoard = useCallback((
         code: string
     ): Promise<ScoreboardResponse> =>
         run(async () => {
             const board = await fetchScoreboard(code);
             setScoreboard(board);
             return board;
-        });
+        }), [run]);
 
     return {
         // state

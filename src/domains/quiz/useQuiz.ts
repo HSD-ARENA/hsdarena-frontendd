@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
     createQuiz,
     fetchQuizzes,
@@ -28,7 +28,7 @@ export function useQuiz() {
         useState<QuizDetailResponse | null>(null);
 
     // CREATE
-    const create = (data: QuizCreateRequest): Promise<QuizCreateResponse> =>
+    const create = useCallback((data: QuizCreateRequest): Promise<QuizCreateResponse> =>
         run(async () => {
             const created = await createQuiz(data);
 
@@ -45,26 +45,26 @@ export function useQuiz() {
             ]);
 
             return created;
-        });
+        }), [run]);
 
     // LIST
-    const fetchAll = (): Promise<Quiz[]> =>
+    const fetchAll = useCallback((): Promise<Quiz[]> =>
         run(async () => {
             const list = await fetchQuizzes();
             setQuizzes(list);
             return list;
-        });
+        }), [run]);
 
     // DETAIL
-    const fetchById = (quizId: string): Promise<QuizDetailResponse> =>
+    const fetchById = useCallback((quizId: string): Promise<QuizDetailResponse> =>
         run(async () => {
             const quiz = await fetchQuiz(quizId);
             setCurrentQuiz(quiz);
             return quiz;
-        });
+        }), [run]);
 
     // UPDATE
-    const updateById = (
+    const updateById = useCallback((
         quizId: string,
         data: QuizUpdateRequest
     ): Promise<QuizUpdateResponse> =>
@@ -84,10 +84,10 @@ export function useQuiz() {
             );
 
             return updated;
-        });
+        }), [run]);
 
     // DELETE
-    const removeById = (quizId: string) =>
+    const removeById = useCallback((quizId: string) =>
         run(async () => {
             await deleteQuiz(quizId);
 
@@ -95,7 +95,7 @@ export function useQuiz() {
             setCurrentQuiz((prev) =>
                 prev?.id === quizId ? null : prev
             );
-        });
+        }), [run]);
 
     return {
         // state
@@ -107,6 +107,7 @@ export function useQuiz() {
         createQuiz: create,
         fetchQuizzes: fetchAll,
         fetchQuiz: fetchById,
+        fetch: fetchById,
         updateQuiz: updateById,
         deleteQuiz: removeById,
     };

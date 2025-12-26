@@ -6,7 +6,7 @@
 
 ---
 
-## � NASIL KULLANILIR?
+## 📝 NASIL KULLANILIR?
 
 Her değişiklik yapmadan **ÖNCE** buraya kayıt ekle:
 
@@ -161,20 +161,66 @@ Coordinates with backend timer management (quiz.gateway.ts).
 Backend auto-broadcasts time:up event when timer expires.
 ```
 
-**Push Tarihi:** [Bekliyor]
+**Push Tarihi:** 23 Aralık 2025, 23:30
 
 ---
 
-**Son Güncelleme:** 23 Aralık 2025  
-**Toplam Kayıt:** 7
+### 26 Aralık 2025 - Yunus Özdemir
+
+**Değiştirilen Dosyalar:**
+- `src/app/layout.tsx` - Space Grotesk font eklendi
+- `src/app/page.tsx` - Ana sayfa tamamen yeniden tasarlandı (mesh background, animated blur orbs, glass panels, gradient text)
+- `src/app/(auth)/login/page.tsx` - Admin login sayfası tamamen yeniden tasarlandı (mesh background, glass panel form, custom inputs)
+- `src/app/admin/page.tsx` - Admin dashboard navbar ve layout güncellendi (dark red theme, Material Icons)
+- `src/app/admin/quiz/create/page.tsx` - Quiz oluşturma sayfası layout güncellendi
+- `src/app/admin/quiz/join/[sessionCode]/page.tsx` - QR kod sayfası navbar ve layout güncellendi
+- `src/app/admin/quiz/session/[sessionCode]/page.tsx` - Quiz session sayfası tamamen yeniden tasarlandı, OverlaySpinner import eklendi
+- `src/app/admin/quiz/result/page.tsx` - Quiz sonuç sayfası dark red navbar ile güncellendi
+- `src/app/team/join/page.tsx` - Takım katılım sayfası tamamen yeniden tasarlandı (mesh background, glass panel)
+- `src/app/team/finished/page.tsx` - Quiz bitirdi sayfası tamamen yeniden tasarlandı (emerald gradient, celebration theme)
+- `src/app/team/quiz/[sessionCode]/page.tsx` - Takım quiz sayfası modern UI ile güncellendi, choice button stilleri admin gibi yapıldı, timing logic düzeltildi
+- `src/components/admin/QuizList.tsx` - Quiz listesi modern kart tasarımı ile güncellendi (status badges, hover effects)
+- `src/components/ui/OverlaySpinner.tsx` - Tamamen yeniden tasarlandı (mesh background, modern spinner, dark red theme)
+
+**Eklenen Dosyalar:**
+- Yok (sadece mevcut dosyalar güncellendi)
+
+**Silinen Dosyalar:**
+- Yok
+
+**Açıklama:**
+Tüm uygulama dark red temasına geçirildi. 10/10 sayfa güncellendi: mesh background (radial gradients), animated floating blur orbs, glass panel effects (backdrop blur), gradient text (Space Grotesk font), Material Icons Round, modern card layouts, hover effects ve custom input stilleri eklendi. QuizList modern grid layout aldı. OverlaySpinner mesh background ile güncellendi. Team quiz timing logic düzeltildi: cevap submit edilince "answered" ekranında kalıp süre bitince result gösteriliyor, "Soruyu boş bıraktınız" mesajı sadece cevap verilmediğinde gösteriliyor (isTimeout flag eklendi). Team quiz choice buttonları admin stili aldı (Teal/Pink/Purple/Orange borders, icon boxes).
+
+**Commit Mesajı:**
+```
+feat: implement dark red UI theme across entire application
+
+- Add mesh background with radial gradients to all pages
+- Add animated floating blur orbs and glass panel effects
+- Integrate Material Icons Round and Space Grotesk font
+- Redesign all 10 pages: homepage, login, admin dashboard, quiz create, QR code, quiz session, quiz result, team join, team finished, team quiz
+- Update QuizList with modern card layout, status badges, hover effects
+- Redesign OverlaySpinner with mesh background and modern spinner
+- Fix team quiz timing logic: answer waits for timer, proper timeout handling
+- Update team quiz choice buttons to match admin style (colored borders)
+- Add isTimeout flag to differentiate timeout vs wrong answer
+
+All pages now feature consistent dark red theme (#1a0505 background, #D90429 primary, #63AEA8/E06085/C57CEA/F9C479 choice colors).
+```
+
+**Push Tarihi:** 26 Aralık 2025, 18:10
+
+---
+
+**Son Güncelleme:** 26 Aralık 2025  
+**Toplam Kayıt:** 3
 ````
 
 ---
 
-## � KATILIMCILAR
+## 👥 KATILIMCILAR
 
 | İsim | Rol | Aktif Modüller |
 |------|-----|----------------|
 | Yunus Özdemir | Lead Developer | Tüm modüller |
-| | | |
-| | | |
+| Emir Uzlucan | Developer | Backend Integration, Domains |

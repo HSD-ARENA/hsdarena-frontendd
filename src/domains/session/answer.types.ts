@@ -1,4 +1,4 @@
-import { Choice } from './question.types';
+import { Choice } from '@/types/common';
 
 export interface AnswerRequest {
     questionId: string;

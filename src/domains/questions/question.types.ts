@@ -58,4 +58,5 @@ export interface CurrentQuestionResponse {
     timeLimitSec: number;
     points: number;
     indexInQuiz: number;
+    imageUrl?: string;
 }
