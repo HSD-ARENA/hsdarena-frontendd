@@ -29,7 +29,7 @@ class SocketManager {
     this.currentToken = token;
 
     // Create connection with auth token
-    this.socket = io('http://localhost:8082/realtime', {
+    this.socket = io(`${process.env.NEXT_PUBLIC_API_URL}/realtime`, {
       auth: {
         token: token
       }
