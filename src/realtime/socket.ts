@@ -29,10 +29,11 @@ class SocketManager {
     this.currentToken = token;
 
     // Create connection with auth token
-    this.socket = io(`${process.env.NEXT_PUBLIC_API_URL}/realtime`, {
-      auth: {
-        token: token
-      }
+    // removee /api from api url for socket connection
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') || '';
+    this.socket = io(`${socketUrl}/realtime`, {
+  auth: { token: token },
+  transports: ['websocket', 'polling']
     });
 
     // Return a promise that resolves when connected
